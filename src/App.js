@@ -2,58 +2,82 @@ import { useState } from 'react';
 import './App.css';
 
 function App() {
-  const [cardList, setCardList] = useState([
-    { id: 1, order: 3, text: 'Card 3' },
-    { id: 2, order: 1, text: 'Card 1' },
-    { id: 3, order: 2, text: 'Card 2' },
-    { id: 4, order: 4, text: 'Card 4' }
+  const [boards, setBoards] = useState([
+    { id: 1, title: 'to do', items: [{ id: 1, title: 'go to the shop' }, { id: 2, title: 'rid of trash' }, { id: 3, title: 'eat something' }] },
+    { id: 2, title: 'verify', items: [{ id: 4, title: 'code rewiev' }, { id: 5, title: 'fractal task' }, { id: 6, title: 'Fibonacci task' }] },
+    { id: 3, title: 'done', items: [{ id: 7, title: 'make a video' }, { id: 8, title: 'mounting' }, { id: 9, title: 'render something' }] }
   ])
-  const [currentCard, setCurrentCard] = useState(null);
-  const dragStartHandle = (event, card) => {
-    console.log('Card', card)
-    setCurrentCard(card)
-  } 
-  const dragEndHandle = (event) => {
-    event.target.style.background = 'white'
+  const [currentBoard, setCurrentBoard] = useState(null)
+  const [currentItem, setCurrentItem] = useState(null)
+  const dragOverHandler = (e) => { 
+    e.preventDefault()
+    if (e.target.className === 'item') {
+      e.target.style.boxShadow = '0 2px 3px gray'
+    }
   }
-  const dragOverHandle = (event) => {
-    event.preventDefault()
-    event.target.style.background = 'lightgray'
+  const dragLeaveHandler = (e) => {
+    e.target.style.boxShadow = 'none'
   }
-  const dropHandle = (event, card) => {
-    event.preventDefault()
-    setCardList(cardList.map(c => {
-      if (c.id === card.id) {
-        return {...c, order: currentCard.order}
-      } else if (c.id === currentCard.id) {
-        return {...c, order: card.order}
+  const dragStartHandler = (e, board, item) => {
+    setCurrentBoard(board)
+    setCurrentItem(item)
+  }
+  const dragEndHandler = (e) => {
+    e.target.style.boxShadow = 'none'
+  }
+  const dropHandler = (e, board, item) => {
+    e.preventDefault()
+    const currentIndex = currentBoard.items.indexOf(currentItem)
+    currentBoard.items.splice(currentIndex, 1)
+    const dropIndex = board.items.indexOf(item)
+    board.items.splice(dropIndex + 1, 0, currentItem)
+    setBoards(boards.map(b => {
+      if (b.id === board.id) {
+        return board
+      } else if (b.id === currentBoard.id) {
+        return currentBoard
       } else {
-        return c
+        return b
       }
     }))
-    event.target.style.background = 'white'
   }
-  const sortCards = (a, b) => {
-    if (a.order > b.order) {
-      return 1
-    } else {
-      return -1
-    }
+  const dropCardHandler = (e, board) => {
+    board.items.push(currentItem)
+    const currentIndex = currentBoard.items.indexOf(currentItem)
+    currentBoard.items.splice(currentIndex, 1)
+    setBoards(boards.map(b => {
+      if (b.id === board.id) {
+        return board
+      } else if (b.id === currentBoard.id) {
+        return currentBoard
+      } else {
+        return b
+      }
+    }))
   }
   return (
     <div className="App">
-      {cardList.sort(sortCards).map(card => 
+      {boards.map(board => 
         <div
-          className='card'
-          draggable={true}
-          onDragStart={e => dragStartHandle(e, card)}
-          onDragLeave={e => dragEndHandle(e)}
-          onDragEnd={e => dragEndHandle(e)}
-          onDragOver={e => dragOverHandle(e)}
-          onDrop={e => dropHandle(e, card)}
+          className='board'
+          onDragOver={e => dragOverHandler(e)}
+          onDrop={e => dropCardHandler(e, board)}
         >
-          {card.text}
-        </div>  
+          <div className='board__title'>{board.title}</div>
+          {board.items.map(item =>
+            <div
+              className='item'
+              draggable={true}
+              onDragOver={e => dragOverHandler(e)}
+              onDragLeave={e => dragLeaveHandler(e)}
+              onDragStart={e =>  dragStartHandler(e, board, item)}
+              onDragEnd={e => dragEndHandler(e)}
+              onDrop={e => dropHandler(e, board, item)}
+            >
+              {item.title}
+            </div>  
+          )}
+        </div>
       )}
     </div>
   );
